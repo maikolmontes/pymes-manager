@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
   Modal, FlatList, Alert, KeyboardAvoidingView, Platform, Image, ActivityIndicator
@@ -8,8 +8,13 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { API_URL } from '@env';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 export default function RegisterBusinessScreen() {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { user } = route.params;
+
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -25,6 +30,13 @@ export default function RegisterBusinessScreen() {
     'Frutería', 'Ferretería', 'Farmacia', 'Librería', 'Ropa',
     'Zapatería', 'Juguetería', 'Papelería', 'Barbería', 'Estética',
   ];
+
+  useEffect(() => {
+    if (!user || user.user_type !== 'Emprendedor') {
+      Alert.alert('Acceso denegado', 'Solo los emprendedores pueden registrar negocios');
+      navigation.goBack();
+    }
+  }, []);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -62,18 +74,16 @@ export default function RegisterBusinessScreen() {
       return;
     }
 
-    setLoading(true);
-
     const formData = new FormData();
     formData.append('name', name);
     formData.append('category', category);
     formData.append('latitude', latitude);
     formData.append('longitude', longitude);
     formData.append('description', description);
+    formData.append('user_id', user.id);
 
     const filename = image.split('/').pop();
-    const match = /\.(\w+)$/.exec(filename);
-    const ext = match ? match[1] : 'jpg';
+    const ext = /\.(\w+)$/.exec(filename)?.[1] || 'jpg';
 
     formData.append('image', {
       uri: image,
@@ -82,29 +92,27 @@ export default function RegisterBusinessScreen() {
     });
 
     try {
+      setLoading(true);
       await axios.post(`${API_URL}/businesses`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      setSuccess(true); // Mostrar animación de éxito
+      setLoading(false);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 2000);
 
-      // Limpiar campos
       setName('');
       setCategory('');
       setLatitude('');
       setLongitude('');
       setDescription('');
       setImage(null);
-
-      // Ocultar animación después de 2.5 segundos
-      setTimeout(() => {
-        setSuccess(false);
-      }, 2500);
     } catch (error) {
-      console.error('Error al registrar:', error);
-      Alert.alert('Error', 'No se pudo registrar el negocio');
-    } finally {
       setLoading(false);
+      console.error('Error al registrar:', error.message);
+      Alert.alert('Error', 'No se pudo registrar el negocio');
     }
   };
 
@@ -186,7 +194,6 @@ export default function RegisterBusinessScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Pantalla de carga */}
       {loading && (
         <View style={styles.overlay}>
           <View style={styles.overlayBox}>
@@ -196,7 +203,6 @@ export default function RegisterBusinessScreen() {
         </View>
       )}
 
-      {/* Animación de éxito */}
       {success && (
         <View style={styles.overlay}>
           <View style={styles.overlayBox}>
@@ -208,6 +214,7 @@ export default function RegisterBusinessScreen() {
     </KeyboardAvoidingView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { padding: 24, paddingTop: 60, backgroundColor: '#f4f6f8' },

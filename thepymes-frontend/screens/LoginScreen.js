@@ -1,20 +1,14 @@
 // screens/LoginScreen.js
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    Image,
-    ScrollView,
-    Dimensions,
-    Alert,
+    View, Text, TextInput, TouchableOpacity, StyleSheet,
+    Image, ScrollView, Dimensions, Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { API_URL } from '@env';
+import { UserContext } from '../context/UserContext';
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +16,7 @@ export default function LoginScreen() {
     const navigation = useNavigation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const { setUser } = useContext(UserContext); // ✅ usamos contexto global
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -35,15 +30,12 @@ export default function LoginScreen() {
 
             Alert.alert('Bienvenido', `${user.name} (${user.user_type})`);
 
-            if (user.user_type === 'Cliente') {
-                //navigation.navigate('HomeClient', { user });
-                console.log("CLIENTE");
-            } else if (user.user_type === 'Emprendedor') {
-                //navigation.navigate('HomeEmprendedor', { user });
-                console.log("EMPRESARIO");
-            } else {
-                Alert.alert('Rol no reconocido');
-            }
+            setUser(user); // ✅ Guardamos en contexto global
+
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Inicio' }], // ⚠️ Navega a pantalla válida dentro del drawer
+            });
 
         } catch (error) {
             const message = error?.response?.data?.message || 'Error al iniciar sesión';
@@ -54,7 +46,6 @@ export default function LoginScreen() {
     return (
         <View style={styles.safe}>
             <ScrollView contentContainerStyle={styles.container}>
-                {/* Parte superior */}
                 <View style={styles.topSection}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={width * 0.06} color="#fff" />
@@ -62,7 +53,6 @@ export default function LoginScreen() {
                     <Text style={styles.loginTitle}>Login</Text>
                 </View>
 
-                {/* Parte inferior */}
                 <View style={styles.bottomSection}>
                     <Image source={require('../assets/logo.png')} style={styles.logo} />
 
@@ -91,7 +81,7 @@ export default function LoginScreen() {
                         <Text style={styles.buttonText}>Iniciar sesión</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Registrarse')}>
                         <Text style={styles.signupText}>¿No tienes cuenta? Regístrate</Text>
                     </TouchableOpacity>
 
@@ -111,34 +101,17 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    safe: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    container: {
-        flexGrow: 1,
-    },
+    safe: { flex: 1, backgroundColor: '#fff' },
+    container: { flexGrow: 1 },
     topSection: {
         backgroundColor: '#0A0E21',
         paddingVertical: width * 0.2,
         alignItems: 'center',
         position: 'relative',
     },
-    backButton: {
-        position: 'absolute',
-        top: 40,
-        left: 20,
-    },
-    loginTitle: {
-        color: '#fff',
-        fontSize: width * 0.08,
-        fontWeight: 'bold',
-    },
-    bottomSection: {
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        padding: 24,
-    },
+    backButton: { position: 'absolute', top: 40, left: 20 },
+    loginTitle: { color: '#fff', fontSize: width * 0.08, fontWeight: 'bold' },
+    bottomSection: { backgroundColor: '#fff', alignItems: 'center', padding: 24 },
     logo: {
         width: width * 0.25,
         height: width * 0.25,
@@ -167,11 +140,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
-    buttonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: width * 0.045,
-    },
+    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: width * 0.045 },
     signupText: {
         color: '#000',
         fontWeight: 'bold',
@@ -179,11 +148,7 @@ const styles = StyleSheet.create({
         fontSize: width * 0.04,
         marginBottom: 10,
     },
-    orText: {
-        color: '#666',
-        marginBottom: 10,
-        fontSize: width * 0.04,
-    },
+    orText: { color: '#666', marginBottom: 10, fontSize: width * 0.04 },
     googleButton: {
         flexDirection: 'row',
         alignItems: 'center',
