@@ -9,7 +9,6 @@ exports.registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Todos los campos son obligatorios' });
         }
 
-        // Validar si el documento ya existe
         const existingUser = await User.findOne({ where: { document } });
         if (existingUser) {
             return res.status(409).json({ message: 'Ya existe un usuario con este número de documento' });
@@ -30,6 +29,25 @@ exports.registerUser = async (req, res) => {
         res.status(201).json(newUser);
     } catch (error) {
         console.error('❌ Error al registrar usuario:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+// Iniciar sesión
+exports.loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ where: { email } });
+
+        if (!user || user.password !== password) {
+            return res.status(401).json({ message: 'Credenciales inválidas' });
+        }
+
+        console.log('✅ Usuario autenticado:', user.toJSON());
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('❌ Error al iniciar sesión:', error.message);
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
