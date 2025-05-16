@@ -1,4 +1,3 @@
-// navigation/StackNavigator.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -11,6 +10,8 @@ import RegisterClientScreen from '../screens/RegisterClientScreen';
 import BusinessListScreen from '../screens/BusinessListScreen';
 import AboutScreen from '../screens/AboutScreen';
 import ContactScreen from '../screens/ContactScreen';
+import HomeClientScreen from '../screens/HomeClientScreen'; // ✅ CORREGIDO: ruta correcta
+import HomeEmprendedorScreen from '../screens/HomeEmprendedorScreen'; // ✅ CORREGIDO
 
 const Stack = createNativeStackNavigator();
 
@@ -56,6 +57,18 @@ export default function StackNavigator() {
                 name="Contacto"
                 component={ContactScreen}
                 options={{ title: 'Contacto' }}
+            />
+
+            {/* 🔓 Agrega estas rutas para el login exitoso */}
+            <Stack.Screen
+                name="HomeClient"
+                component={HomeClientScreen}
+                options={{ title: 'Inicio Cliente', headerShown: false }}
+            />
+            <Stack.Screen
+                name="HomeEmprendedor"
+                component={HomeEmprendedorScreen}
+                options={{ title: 'Inicio Emprendedor' }}
             />
         </Stack.Navigator>
     );

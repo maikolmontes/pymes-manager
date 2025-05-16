@@ -9,9 +9,12 @@ import {
     Image,
     ScrollView,
     Dimensions,
+    Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { API_URL } from '@env';
 
 const { width } = Dimensions.get('window');
 
@@ -20,9 +23,32 @@ export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = () => {
-        // Aquí iría la lógica real de login
-        alert(`Iniciando sesión con ${email}`);
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Campos incompletos', 'Por favor ingresa tu correo y contraseña');
+            return;
+        }
+
+        try {
+            const res = await axios.post(`${API_URL}/users/login`, { email, password });
+            const user = res.data;
+
+            Alert.alert('Bienvenido', `${user.name} (${user.user_type})`);
+
+            if (user.user_type === 'Cliente') {
+                //navigation.navigate('HomeClient', { user });
+                console.log("CLIENTE");
+            } else if (user.user_type === 'Emprendedor') {
+                //navigation.navigate('HomeEmprendedor', { user });
+                console.log("EMPRESARIO");
+            } else {
+                Alert.alert('Rol no reconocido');
+            }
+
+        } catch (error) {
+            const message = error?.response?.data?.message || 'Error al iniciar sesión';
+            Alert.alert('Error', message);
+        }
     };
 
     return (
