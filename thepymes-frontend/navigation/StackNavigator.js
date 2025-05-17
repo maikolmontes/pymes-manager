@@ -11,7 +11,8 @@ import BusinessListScreen from '../screens/BusinessListScreen';
 import AboutScreen from '../screens/AboutScreen';
 import ContactScreen from '../screens/ContactScreen';
 import DrawerNavigator from './DrawerNavigator'; // ✅ IMPORTANTE
-
+import BusinessListMyScreen from '../screens/BusinessListMyScreen';
+import EditBusinessScreen from '../screens/EditBusinessScreen';
 const Stack = createNativeStackNavigator();
 
 export default function StackNavigator() {
@@ -21,6 +22,8 @@ export default function StackNavigator() {
             <Stack.Screen name="IniciarSesion" component={LoginScreen} />
             <Stack.Screen name="Registrarse" component={RegisterClientScreen} />
             <Stack.Screen name="Drawer" component={DrawerNavigator} />
+            <Stack.Screen name="BusinessListMy" component={BusinessListMyScreen} />
         </Stack.Navigator>
+        
     );
 }
