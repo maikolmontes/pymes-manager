@@ -85,7 +85,7 @@ export default function MapScreen() {
   };
 
   const isFavorite = (business_id) =>
-    favorites?.some((f) => f.id === business_id || f.business_id === business_id);
+    favorites?.some((f) => f.business_id === business_id);
 
   const handleToggleFavorite = async (business) => {
     if (!user || user.user_type !== 'Cliente') {
@@ -94,10 +94,10 @@ export default function MapScreen() {
     }
 
     try {
-      const alreadyFavorite = favorites.find(f => f.business_id === business.id);
+      const existing = favorites.find(f => f.business_id === business.id);
 
-      if (alreadyFavorite) {
-        await removeFavorite(user.id, business.id); // ← fix aquí
+      if (existing) {
+        await removeFavorite(user.id, business.id); // 👈 usar correctamente user.id y business.id
       } else {
         await addFavorite(user.id, business.id);
       }
@@ -109,6 +109,7 @@ export default function MapScreen() {
       Alert.alert('Error', 'No se pudo actualizar favoritos');
     }
   };
+
 
   const filteredBusinesses = negocios.filter((b) => {
     if (!b.latitude || !b.longitude) return false;
@@ -242,7 +243,6 @@ export default function MapScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
