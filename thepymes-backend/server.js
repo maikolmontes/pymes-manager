@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import favoriteRoutes from './routes/favorite.routes.js';
 
 //routes
 import businessRoutes from './routes/business.routes.js';
@@ -36,6 +37,7 @@ app.get('/', (req, res) => {
 // Rutas
 app.use('/api/businesses', businessRoutes);
 app.use('/api/users', userRoutes);// ← cuando tengamos la ruta de usuarios activa, descoméntala
+app.use('/api/favorites', favoriteRoutes);
 
 // 🔄 Sincronizar base de datos antes de arrancar el servidor
 db.sequelize.sync({ alter: true }) // usa alter:true para que actualice columnas si cambian
