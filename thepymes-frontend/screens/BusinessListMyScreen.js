@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@env';
 import axios from 'axios';
 import { UserContext } from '../context/UserContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { addFavorite, removeFavorite, getFavoritesByUser } from '../services/favoriteService';
 
 const { width } = Dimensions.get('window');
@@ -31,17 +32,20 @@ export default function BusinessListMyScreen() {
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchMyBusinesses();
-      fetchFavorites();
-    }
-  }, [user]);
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?.id) {
+        fetchMyBusinesses();
+        fetchFavorites();
+      }
+    }, [user])
+  );
 
   const fetchMyBusinesses = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(`${API_URL}/businesses/my/${user.id}`);
-      setNegocios(res.data);
+setNegocios(res.data);
     } catch (error) {
       console.error('❌ Error al cargar negocios del usuario:', error);
     } finally {
@@ -97,7 +101,6 @@ export default function BusinessListMyScreen() {
           {item.description?.substring(0, 100) || 'Sin descripción'}...
         </Text>
       </View>
-      {/* Mostrar icono favorito para Cliente y Emprendedor */}
       {(user?.user_type === 'Cliente' || user?.user_type === 'Emprendedor') && (
         <TouchableOpacity onPress={() => handleToggleFavorite(item)} style={styles.favoriteIcon}>
           <Ionicons
@@ -131,7 +134,6 @@ export default function BusinessListMyScreen() {
             Ver favoritos
           </Text>
         </TouchableOpacity>
-
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
           {categories.map((cat) => (
             <TouchableOpacity

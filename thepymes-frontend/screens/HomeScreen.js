@@ -1,4 +1,3 @@
-// screens/HomeScreen.js
 import React, { useContext } from 'react';
 import {
     View,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { UserContext } from '../context/UserContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -18,20 +18,34 @@ export default function HomeScreen() {
     const navigation = useNavigation();
     const { user } = useContext(UserContext);
 
+    const testimonials = [
+        {
+            name: 'Laura M. - Frutería Natural',
+            text: 'The PYMES Manager me ayudó a ganar más visibilidad en mi barrio. 💡',
+        },
+        {
+            name: 'Carlos R. - Barbería El Estilo',
+            text: 'Ahora mis clientes me encuentran fácilmente gracias al mapa. ✂️',
+        },
+        {
+            name: 'Sofía G. - Tienda Variedades',
+            text: '¡Súper útil y fácil de usar! Me encanta la interfaz. 📱',
+        },
+    ];
+
     // 🧑‍💼 Vista del EMPRENDEDOR
     if (user?.user_type === 'Emprendedor') {
         return (
             <ScrollView contentContainerStyle={styles.container}>
                 <Text style={styles.title}>Bienvenido, {user.name}</Text>
                 <Text style={styles.subtitle}>Panel del Emprendedor</Text>
-
                 <View style={styles.cardGrid}>
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Registro Negocios')}>
                         <Image source={require('../assets/add.png')} style={styles.cardIcon} />
                         <Text style={styles.cardText}>Registrar Negocio</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Lista Negocios')}>
+                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Mis Negocios')}>
                         <Image source={require('../assets/list.png')} style={styles.cardIcon} />
                         <Text style={styles.cardText}>Mis Negocios</Text>
                     </TouchableOpacity>
@@ -55,7 +69,6 @@ export default function HomeScreen() {
         <ScrollView contentContainerStyle={styles.clientContainer}>
             <Text style={styles.title}>The PYMES Manager</Text>
             <Text style={styles.subtitle}>Conectamos tu comunidad con los pequeños negocios 📍</Text>
-
             <Image
                 source={require('../assets/home-mini.png')}
                 style={styles.banner}
@@ -75,6 +88,28 @@ export default function HomeScreen() {
             <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Lista Negocios')}>
                 <Text style={styles.secondaryText}>🛍️ Ver todos los negocios</Text>
             </TouchableOpacity>
+
+            {/* Reseñas / Testimonios */}
+            <Text style={styles.sectionTitle}>Lo que dicen nuestros usuarios 💬</Text>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.testimonialsContainer}
+                contentContainerStyle={{ paddingLeft: 10 }}
+            >
+                {testimonials.map((item, index) => (
+                    <View key={index} style={styles.testimonialCard}>
+                        <MaterialIcons
+                            name="format-quote"
+                            size={24}
+                            color="#3498db"
+                            style={styles.quoteIcon}
+                        />
+                        <Text style={styles.testimonialText}>{item.text}</Text>
+                        <Text style={styles.testimonialName}>— {item.name}</Text>
+                    </View>
+                ))}
+            </ScrollView>
 
             <View style={styles.footerNote}>
                 <Text style={styles.footerText}>¿Eres emprendedor?</Text>
@@ -207,5 +242,42 @@ const styles = StyleSheet.create({
         fontSize: width * 0.038,
         textAlign: 'center',
         color: '#333',
+    },
+    sectionTitle: {
+        fontSize: width * 0.05,
+        fontWeight: '600',
+        color: '#0A0E21',
+        marginVertical: 18,
+        alignSelf: 'flex-start',
+    },
+    testimonialsContainer: {
+        marginBottom: 20,
+        width: '100%',
+    },
+    testimonialCard: {
+        width: width * 0.7,
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 20,
+        marginRight: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    quoteIcon: {
+        marginBottom: 10,
+    },
+    testimonialText: {
+        fontSize: width * 0.035,
+        color: '#34495e',
+        lineHeight: 22,
+        marginBottom: 10,
+    },
+    testimonialName: {
+        fontSize: width * 0.033,
+        color: '#3498db',
+        fontWeight: '600',
     },
 });
