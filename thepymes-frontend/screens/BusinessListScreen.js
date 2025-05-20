@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator,
-  Image, Dimensions, TouchableOpacity, ScrollView
+  Image, Dimensions, TouchableOpacity, ScrollView, Linking, Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@env';
@@ -57,6 +57,23 @@ export default function BusinessListScreen() {
     }
   };
 
+  // Función para abrir ubicación en Google Maps
+  const openLocationInMaps = (lat, lng, name) => {
+    const url = Platform.select({
+      ios: `maps://?q=${name}&ll=${lat},${lng}`,
+      android: `geo:${lat},${lng}?q=${lat},${lng}(${name})`,
+      default: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+    });
+
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+      }
+    });
+  };
+
   const filteredBusinesses = negocios.filter((b) => {
     if (categoryFilter && categoryFilter !== 'Todas' && b.category !== categoryFilter) return false;
     if (showOnlyFavorites && !isFavorite(b.id)) return false;
@@ -78,7 +95,20 @@ export default function BusinessListScreen() {
         <Text style={styles.description}>
           {item.description?.substring(0, 100) || 'Sin descripción'}...
         </Text>
+        
+        {/* Botón para abrir ubicación */}
+        {item.latitude && item.longitude && (
+          <TouchableOpacity 
+            style={styles.locationButton}
+            onPress={() => openLocationInMaps(item.latitude, item.longitude, item.name)}
+          >
+            <Ionicons name="location-outline" size={16} color="#2196F3" />
+            <Text style={styles.locationText}>Ver ubicación</Text>
+          </TouchableOpacity>
+        )}
       </View>
+      
+      {/* Botón de favoritos (sin cambios) */}
       {user?.user_type === 'Cliente' && (
         <TouchableOpacity onPress={() => handleToggleFavorite(item)} style={styles.favoriteIcon}>
           <Ionicons
@@ -246,5 +276,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     top: 12,
+  },
+  // Estilos para el botón de ubicación
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  locationText: {
+    marginLeft: 4,
+    color: '#2196F3',
+    fontSize: 14,
   },
 });

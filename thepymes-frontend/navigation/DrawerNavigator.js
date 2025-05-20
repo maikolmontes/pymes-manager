@@ -66,7 +66,7 @@ function CustomDrawerContent({ navigation }) {
           labelStyle={styles.drawerLabel}
           onPress={() => navigation.navigate('Inicio')}
           icon={() => (
-            <Image source={require('../assets/logo.png')} style={styles.icon} />
+            <Image source={require('../assets/logoW.png')} style={styles.icon} />
           )}
         />
         <DrawerItem

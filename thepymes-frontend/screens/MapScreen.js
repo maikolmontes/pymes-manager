@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator, TouchableOpacity,
-  Animated, Platform, Pressable, Image, Modal, FlatList, Alert
+  Animated, Platform, Pressable, Image, Modal, FlatList, Alert,
+  Linking
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import MapView, { Marker } from 'react-native-maps';
@@ -97,7 +98,7 @@ export default function MapScreen() {
       const existing = favorites.find(f => f.business_id === business.id);
 
       if (existing) {
-        await removeFavorite(user.id, business.id); // 👈 usar correctamente user.id y business.id
+        await removeFavorite(user.id, business.id);
       } else {
         await addFavorite(user.id, business.id);
       }
@@ -110,6 +111,28 @@ export default function MapScreen() {
     }
   };
 
+  const handleOpenInMaps = () => {
+    if (selectedBusiness) {
+      const { latitude, longitude, name } = selectedBusiness;
+      const url = Platform.select({
+        ios: `maps://?q=${name}&ll=${latitude},${longitude}`,
+        android: `geo:${latitude},${longitude}?q=${latitude},${longitude}(${encodeURIComponent(name)})`
+      });
+
+      Linking.canOpenURL(url).then(supported => {
+        if (supported) {
+          return Linking.openURL(url);
+        } else {
+          // Si no hay aplicación de mapas, abrir en Google Maps web
+          const browserUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}&query_place_id=${encodeURIComponent(name)}`;
+          return Linking.openURL(browserUrl);
+        }
+      }).catch(err => {
+        console.error('Error al abrir mapa:', err);
+        Alert.alert('Error', 'No se pudo abrir la aplicación de mapas');
+      });
+    }
+  };
 
   const filteredBusinesses = negocios.filter((b) => {
     if (!b.latitude || !b.longitude) return false;
@@ -158,39 +181,67 @@ export default function MapScreen() {
               key={b.id}
               coordinate={{ latitude: b.latitude, longitude: b.longitude }}
               onPress={() => setSelectedBusiness(b)}
-            />
+            >
+              <View style={[
+                styles.markerContainer,
+                selectedBusiness?.id === b.id && styles.selectedMarker
+              ]}>
+                <Ionicons 
+                  name="business" 
+                  size={24} 
+                  color={selectedBusiness?.id === b.id ? '#2196F3' : '#555'} 
+                />
+              </View>
+            </Marker>
           ))}
         </MapView>
       </Animated.View>
 
-      {/* Drawer de negocio */}
+      {/* Tarjeta de negocio seleccionado */}
       {selectedBusiness && (
-        <Animated.View style={styles.drawer}>
-          <View style={styles.drawerContent}>
+        <Animated.View style={styles.businessCard}>
+          <View style={styles.cardHeader}>
             {selectedBusiness.image_url && (
-              <Image source={{ uri: selectedBusiness.image_url }} style={styles.drawerImage} />
+              <Image source={{ uri: selectedBusiness.image_url }} style={styles.cardImage} />
             )}
-            <View style={styles.drawerTextContainer}>
-              <Text style={styles.drawerTitle}>{selectedBusiness.name}</Text>
-              <Text style={styles.drawerSubtitle}>{selectedBusiness.category}</Text>
-              <Text style={styles.drawerDescription}>
-                {selectedBusiness.description || 'Sin descripción'}
-              </Text>
+            <View style={styles.cardTitleContainer}>
+              <Text style={styles.cardTitle}>{selectedBusiness.name}</Text>
+              <Text style={styles.cardSubtitle}>{selectedBusiness.category}</Text>
             </View>
             {user?.user_type === 'Cliente' && (
-              <TouchableOpacity onPress={() => handleToggleFavorite(selectedBusiness)}>
+              <TouchableOpacity 
+                onPress={() => handleToggleFavorite(selectedBusiness)}
+                style={styles.favoriteButton}
+              >
                 <Ionicons
                   name={isFavorite(selectedBusiness.id) ? 'heart' : 'heart-outline'}
                   size={28}
                   color="red"
-                  style={{ marginLeft: 10 }}
                 />
               </TouchableOpacity>
             )}
           </View>
-          <Pressable onPress={() => setSelectedBusiness(null)}>
-            <Text style={styles.closeText}>Cerrar</Text>
-          </Pressable>
+          
+          <Text style={styles.cardDescription}>
+            {selectedBusiness.description || 'Sin descripción'}
+          </Text>
+          
+          <View style={styles.cardButtonsContainer}>
+            <TouchableOpacity 
+              style={styles.locationButton}
+              onPress={handleOpenInMaps}
+            >
+              <Ionicons name="map" size={20} color="white" />
+              <Text style={styles.locationButtonText}>Abrir en Maps</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setSelectedBusiness(null)}
+            >
+              <Text style={styles.closeButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       )}
 
@@ -234,8 +285,11 @@ export default function MapScreen() {
               minimumTrackTintColor="#2196F3"
               maximumTrackTintColor="#000"
             />
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setFilterModalVisible(false)}>
-              <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+            <TouchableOpacity 
+              style={styles.modalCloseButton} 
+              onPress={() => setFilterModalVisible(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>Aplicar Filtros</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -245,53 +299,200 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  mapWrapper: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  drawer: {
-    position: 'absolute', bottom: 0, width: '100%',
-    backgroundColor: 'white', padding: 16,
-    borderTopLeftRadius: 16, borderTopRightRadius: 16,
-    elevation: 10,
+  container: { 
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  drawerContent: { flexDirection: 'row', alignItems: 'center' },
-  drawerImage: { width: 60, height: 60, borderRadius: 8, marginRight: 16 },
-  drawerTextContainer: { flex: 1 },
-  drawerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  drawerSubtitle: { fontSize: 14, color: '#2196F3' },
-  drawerDescription: { fontSize: 13, color: '#444', marginTop: 6 },
-  closeText: { color: 'red', textAlign: 'right', marginTop: 10, fontWeight: 'bold' },
+  mapWrapper: { 
+    flex: 1,
+  },
+  center: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  businessCard: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  cardTitleContainer: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: '#2196F3',
+    marginTop: 2,
+  },
+  favoriteButton: {
+    marginLeft: 10,
+    padding: 8,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  cardButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2196F3',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 10,
+    justifyContent: 'center',
+  },
+  locationButtonText: {
+    color: 'white',
+    marginLeft: 8,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  closeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    color: '#555',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  markerContainer: {
+    backgroundColor: 'white',
+    padding: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    elevation: 3,
+  },
+  selectedMarker: {
+    borderColor: '#2196F3',
+    borderWidth: 2,
+  },
   filterButtonContainer: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 60 : 30,
-    left: 15, right: 15, zIndex: 20, alignItems: 'center',
+    position: 'absolute', 
+    top: Platform.OS === 'ios' ? 60 : 30,
+    left: 20, 
+    right: 20, 
+    zIndex: 20,
+    alignItems: 'center',
   },
   filterButton: {
-    backgroundColor: '#2196F3', paddingVertical: 10, paddingHorizontal: 25,
-    borderRadius: 25, elevation: 5, alignItems: 'center',
+    backgroundColor: '#2196F3', 
+    paddingVertical: 10, 
+    paddingHorizontal: 25,
+    borderRadius: 25, 
+    elevation: 5, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
-  filterButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  filterButtonSubText: { color: '#eee', fontSize: 12, marginTop: 2 },
+  filterButtonText: { 
+    color: '#fff', 
+    fontSize: 18, 
+    fontWeight: 'bold',
+  },
+  filterButtonSubText: { 
+    color: '#eee', 
+    fontSize: 12, 
+    marginTop: 2,
+  },
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center', paddingHorizontal: 20,
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', 
+    paddingHorizontal: 20,
   },
   modalContent: {
-    backgroundColor: 'white', borderRadius: 16,
-    paddingVertical: 20, paddingHorizontal: 15, maxHeight: '80%',
+    backgroundColor: 'white', 
+    borderRadius: 16,
+    paddingVertical: 20, 
+    paddingHorizontal: 15, 
+    maxHeight: '80%',
   },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-  modalLabel: { fontSize: 18, fontWeight: '600', marginVertical: 8 },
+  modalTitle: { 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    marginBottom: 12, 
+    textAlign: 'center',
+    color: '#333',
+  },
+  modalLabel: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    marginVertical: 8,
+    color: '#555',
+  },
   categoryItem: {
-    paddingVertical: 12, paddingHorizontal: 15,
-    borderRadius: 8, borderWidth: 1, borderColor: '#ccc',
+    paddingVertical: 12, 
+    paddingHorizontal: 15,
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#ccc',
     marginBottom: 10,
   },
-  selectedCategory: { backgroundColor: '#2196F3', borderColor: '#2196F3' },
-  selectedCategoryText: { color: 'white', fontWeight: 'bold' },
-  categoryText: { fontSize: 16, color: '#333' },
-  modalCloseButton: {
-    backgroundColor: '#2196F3', paddingVertical: 14,
-    borderRadius: 12, marginTop: 20, alignItems: 'center',
+  selectedCategory: { 
+    backgroundColor: '#2196F3', 
+    borderColor: '#2196F3',
   },
-  modalCloseButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+  selectedCategoryText: { 
+    color: 'white', 
+    fontWeight: 'bold',
+  },
+  categoryText: { 
+    fontSize: 16, 
+    color: '#333',
+  },
+  modalCloseButton: {
+    backgroundColor: '#2196F3', 
+    paddingVertical: 14,
+    borderRadius: 12, 
+    marginTop: 20, 
+    alignItems: 'center',
+  },
+  modalCloseButtonText: { 
+    color: 'white', 
+    fontWeight: 'bold', 
+    fontSize: 16,
+  },
 });
