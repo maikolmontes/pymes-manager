@@ -1,32 +1,23 @@
-import React, { useState, useEffect } from 'react';
+// 👇🏻 CAMBIOS AQUÍ
+import React, { useState, useEffect, useContext } from 'react';
 import {
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ScrollView,
-  Modal as RNModal, // Modal básico de React Native (renombrado)
-  FlatList, 
-  Alert, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Image, 
-  ActivityIndicator
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
+  Modal as RNModal, FlatList, Alert, KeyboardAvoidingView, Platform,
+  Image, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import MapView, { Marker } from 'react-native-maps';
-import Modal from 'react-native-modal'; // Modal mejorado para el mapa
+import Modal from 'react-native-modal';
 import axios from 'axios';
 import { API_URL } from '@env';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { UserContext } from '../context/UserContext'; // ✅ Importar contexto
 
 export default function RegisterBusinessScreen() {
   const navigation = useNavigation();
-  const route = useRoute();
-  const { user } = route.params;
+  const { user } = useContext(UserContext); // ✅ Obtener desde contexto
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
@@ -52,11 +43,11 @@ export default function RegisterBusinessScreen() {
       Alert.alert('Acceso denegado', 'Solo los emprendedores pueden registrar negocios');
       navigation.goBack();
     }
-    
+
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return;
-      
+
       const location = await Location.getCurrentPositionAsync({});
       setInitialRegion({
         latitude: location.coords.latitude,
@@ -162,7 +153,6 @@ export default function RegisterBusinessScreen() {
       Alert.alert('Error', 'No se pudo registrar el negocio');
     }
   };
-
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -205,10 +195,10 @@ export default function RegisterBusinessScreen() {
 
         <View style={styles.inputContainer}>
           <Ionicons name="locate" size={20} color="#666" style={styles.icon} />
-          <TextInput 
-            style={styles.input} 
-            placeholder="Latitud" 
-            value={latitude} 
+          <TextInput
+            style={styles.input}
+            placeholder="Latitud"
+            value={latitude}
             onChangeText={setLatitude}
             editable={false}
           />
@@ -216,10 +206,10 @@ export default function RegisterBusinessScreen() {
 
         <View style={styles.inputContainer}>
           <Ionicons name="locate" size={20} color="#666" style={styles.icon} />
-          <TextInput 
-            style={styles.input} 
-            placeholder="Longitud" 
-            value={longitude} 
+          <TextInput
+            style={styles.input}
+            placeholder="Longitud"
+            value={longitude}
             onChangeText={setLongitude}
             editable={false}
           />
@@ -240,8 +230,8 @@ export default function RegisterBusinessScreen() {
           <Text style={styles.locationButtonText}>📍 Usar mi ubicación actual</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.mapButton} 
+        <TouchableOpacity
+          style={styles.mapButton}
           onPress={() => setMapModalVisible(true)}
         >
           <Text style={styles.buttonText}>🗺️ Seleccionar ubicación en mapa</Text>
@@ -355,42 +345,42 @@ const styles = StyleSheet.create({
   },
   locationButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   modalOverlay: {
-    flex: 1, 
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center', 
+    justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    width: 300, 
+    width: 300,
     backgroundColor: '#fff',
-    padding: 20, 
+    padding: 20,
     borderRadius: 12,
   },
-  categoryItem: { 
-    paddingVertical: 10, 
-    borderBottomWidth: 1, 
-    borderColor: '#ddd' 
+  categoryItem: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#ddd'
   },
-  categoryText: { 
-    fontSize: 16, 
-    color: '#333' 
+  categoryText: {
+    fontSize: 16,
+    color: '#333'
   },
   closeButton: {
-    marginTop: 20, 
+    marginTop: 20,
     backgroundColor: '#2196F3',
-    paddingVertical: 10, 
-    borderRadius: 12, 
+    paddingVertical: 10,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  closeButtonText: { 
-    color: '#fff', 
-    fontWeight: 'bold' 
+  closeButtonText: {
+    color: '#fff',
+    fontWeight: 'bold'
   },
   overlay: {
     position: 'absolute',
-    top: 0, 
-    left: 0, 
-    right: 0, 
+    top: 0,
+    left: 0,
+    right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
