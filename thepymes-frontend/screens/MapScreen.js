@@ -12,7 +12,7 @@ import { API_URL } from '@env';
 import { Ionicons } from '@expo/vector-icons';
 import { UserContext } from '../context/UserContext';
 import { addFavorite, removeFavorite, getFavoritesByUser } from '../services/favoriteService';
-import WebView from 'react-native-webview';
+import { WebView } from 'react-native-webview';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -299,7 +299,7 @@ const MapScreen = () => {
         </Animated.View>
       )}
 
-      {/* Modal de Google Street View */}
+      {/* Modal de Google Street View - Versión actualizada con WebView */}
       <Modal
         visible={streetViewVisible}
         animationType="slide"
@@ -309,16 +309,49 @@ const MapScreen = () => {
           {selectedBusiness && (
             <WebView
               source={{
-                uri: `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDUEn0BxYEelwx7cFrdQug1lX-Ul71wfmw&location=${selectedBusiness.latitude},${selectedBusiness.longitude}&heading=210&pitch=10&fov=90`
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <meta 
+                        name="viewport" 
+                        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+                      >
+                      <style>
+                        body, html { 
+                          margin: 0; 
+                          padding: 0; 
+                          width: 100%; 
+                          height: 100%; 
+                          overflow: hidden; 
+                        }
+                        iframe { 
+                          position: absolute; 
+                          top: 0; 
+                          left: 0; 
+                          width: 100%; 
+                          height: 100%; 
+                          border: none; 
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      <iframe
+                        src="https://www.google.com/maps/embed/v1/streetview?key=AIzaSyDUEn0BxYEelwx7cFrdQug1lX-Ul71wfmw&location=${selectedBusiness.latitude},${selectedBusiness.longitude}&heading=210&pitch=10&fov=90"
+                        allowfullscreen
+                      ></iframe>
+                    </body>
+                  </html>
+                `
               }}
-              style={styles.webview}
+              style={{ flex: 1 }}
               javaScriptEnabled={true}
               domStorageEnabled={true}
               startInLoadingState={true}
               renderLoading={() => (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#2196F3" />
-                  <Text>Cargando vista 360°...</Text>
+                  <Text style={{ color: 'white', marginTop: 10 }}>Cargando vista 360°...</Text>
                 </View>
               )}
             />
@@ -533,9 +566,6 @@ const styles = StyleSheet.create({
   streetViewContainer: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  webview: {
-    flex: 1,
   },
   closeStreetViewButton: {
     position: 'absolute',
