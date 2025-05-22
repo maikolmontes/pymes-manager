@@ -53,3 +53,56 @@ exports.getAllBusinesses = async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
+
+
+// EDITAR negocio
+exports.updateBusiness = async (req, res) => {
+    const { id } = req.params;
+    const { name, category, latitude, longitude, description } = req.body;
+
+    try {
+        const business = await Business.findByPk(id);
+
+        if (!business) {
+            return res.status(404).json({ message: 'Negocio no encontrado' });
+        }
+
+        const image_url = req.file
+            ? `${req.protocol}://${req.get('host')}/uploads/imagenesnegocios/${req.file.filename}`
+            : business.image_url;
+
+        await business.update({
+            name: name || business.name,
+            category: category || business.category,
+            latitude: latitude ? parseFloat(latitude) : business.latitude,
+            longitude: longitude ? parseFloat(longitude) : business.longitude,
+            description: description || business.description,
+            image_url,
+            updated_at: new Date(),
+        });
+
+        res.json({ message: 'Negocio actualizado correctamente', business });
+    } catch (error) {
+        console.error('❌ Error al actualizar negocio:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+// ELIMINAR negocio
+exports.deleteBusiness = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const business = await Business.findByPk(id);
+
+        if (!business) {
+            return res.status(404).json({ message: 'Negocio no encontrado' });
+        }
+
+        await business.destroy();
+        res.json({ message: 'Negocio eliminado correctamente' });
+    } catch (error) {
+        console.error('❌ Error al eliminar negocio:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
