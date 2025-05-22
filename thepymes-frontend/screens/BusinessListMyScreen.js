@@ -10,13 +10,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Linking,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@env';
 import axios from 'axios';
 import { UserContext } from '../context/UserContext';
-import { useFocusEffect } from '@react-navigation/native';
 import { addFavorite, removeFavorite, getFavoritesByUser } from '../services/favoriteService';
 
 const { width } = Dimensions.get('window');
@@ -33,6 +34,7 @@ export default function BusinessListMyScreen() {
   const { user, favorites, setFavorites } = useContext(UserContext);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState(null);
+  const navigation = useNavigation();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -81,7 +83,30 @@ export default function BusinessListMyScreen() {
     }
   };
 
-  // Función para abrir ubicación en Google Maps
+  const handleDelete = async (id) => {
+    Alert.alert(
+      'Eliminar negocio',
+      '¿Estás seguro de eliminar este negocio?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${API_URL}/businesses/${id}`);
+              alert("✅ Negocio eliminado correctamente.");
+              fetchMyBusinesses();
+            } catch (error) {
+              console.error("❌ Error al eliminar negocio:", error.message);
+              alert("❌ No se pudo eliminar el negocio.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const openLocationInMaps = (lat, lng, name) => {
     const url = Platform.select({
       ios: `maps://?q=${name}&ll=${lat},${lng}`,
@@ -119,8 +144,7 @@ export default function BusinessListMyScreen() {
         <Text style={styles.description}>
           {item.description?.substring(0, 100) || 'Sin descripción'}...
         </Text>
-        
-        {/* Botón para abrir ubicación */}
+
         {item.latitude && item.longitude && (
           <TouchableOpacity 
             style={styles.locationButton}
@@ -130,9 +154,23 @@ export default function BusinessListMyScreen() {
             <Text style={styles.locationText}>Ver ubicación</Text>
           </TouchableOpacity>
         )}
+
+        {user?.user_type === 'Emprendedor' && (
+          <View style={{ flexDirection: 'row', marginTop: 10 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('EditBusiness', { business: item })}
+              style={{ marginRight: 15 }}
+            >
+              <Ionicons name="create-outline" size={20} color="#4CAF50" />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => handleDelete(item.id)}>
+              <Ionicons name="trash-outline" size={20} color="#F44336" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
-      
-      {/* Botón de favoritos (manteniendo tu implementación original) */}
+
       {(user?.user_type === 'Cliente' || user?.user_type === 'Emprendedor') && (
         <TouchableOpacity onPress={() => handleToggleFavorite(item)} style={styles.favoriteIcon}>
           <Ionicons
@@ -162,9 +200,7 @@ export default function BusinessListMyScreen() {
           style={[styles.favToggle, showOnlyFavorites && styles.favToggleActive]}
         >
           <Ionicons name="heart" size={18} color={showOnlyFavorites ? '#fff' : '#2196F3'} />
-          <Text style={[styles.favToggleText, showOnlyFavorites && { color: '#fff' }]}>
-            Ver favoritos
-          </Text>
+          <Text style={[styles.favToggleText, showOnlyFavorites && { color: '#fff' }]}>Ver favoritos</Text>
         </TouchableOpacity>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
           {categories.map((cat) => (
@@ -300,7 +336,6 @@ const styles = StyleSheet.create({
     right: 12,
     top: 12,
   },
-  // Estilos para el botón de ubicación
   locationButton: {
     flexDirection: 'row',
     alignItems: 'center',

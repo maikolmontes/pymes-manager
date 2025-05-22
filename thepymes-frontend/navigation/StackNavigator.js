@@ -23,6 +23,8 @@ export default function StackNavigator() {
             <Stack.Screen name="Registrarse" component={RegisterClientScreen} />
             <Stack.Screen name="Drawer" component={DrawerNavigator} />
             <Stack.Screen name="BusinessListMy" component={BusinessListMyScreen} />
+            <Stack.Screen name="EditBusiness" component={EditBusinessScreen} />
+
         </Stack.Navigator>
         
     );
