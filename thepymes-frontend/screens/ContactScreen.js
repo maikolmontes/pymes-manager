@@ -1,148 +1,252 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Linking } from 'react-native';
 
-const { width } = Dimensions.get('window');
-
 export default function ContactScreen() {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [message, setMessage] = useState('');
+  const { width } = useWindowDimensions();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = () => {
-        // Aquí puedes agregar la lógica para manejar el envío del formulario
-        console.log({ name, email, message });
-    };
+  const handleChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    const openURL = (url) => {
-        Linking.openURL(url).catch((err) => console.error("No se pudo abrir la URL: ", err));
-    };
+  const handleSubmit = () => {
+    if (!formData.name || !formData.email || !formData.message) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
 
-    return (
-        <SafeAreaView style={styles.safe}>
-            <ScrollView contentContainerStyle={styles.container}>
-                <View style={styles.header}>
-                    <Icon name="email" size={40} color="#2196F3" />
-                    <Text style={styles.title}>¡Contáctanos!</Text>
-                </View>
+    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return;
+    }
 
-                <View style={styles.separator} />
+    setIsSubmitting(true);
+    
+    // Simulación de envío
+    console.log('Formulario enviado:', formData);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      Alert.alert(
+        '¡Gracias!',
+        'Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto.',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => setFormData({ name: '', email: '', message: '' }) 
+          }
+        ]
+      );
+    }, 1500);
+  };
 
-                <Text style={styles.text}>
-                    ¿Tienes alguna pregunta o sugerencia? Llena el siguiente formulario y nos pondremos en contacto contigo.
-                </Text>
+  const openURL = async (url) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', `No se pudo abrir la URL: ${url}`);
+      }
+    } catch (error) {
+      console.error("Error al abrir URL: ", error);
+      Alert.alert('Error', 'Ocurrió un problema al intentar abrir el enlace');
+    }
+  };
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Tu nombre"
-                    value={name}
-                    onChangeText={setName}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Tu correo electrónico"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                />
-                <TextInput
-                    style={[styles.input, styles.textArea]}
-                    placeholder="Tu mensaje"
-                    value={message}
-                    onChangeText={setMessage}
-                    multiline
-                    numberOfLines={4}
-                />
+  const socialLinks = [
+    { name: 'facebook', url: 'https://www.facebook.com/', color: '#3b5998' },
+    { name: 'twitter', url: 'https://twitter.com/', color: '#00acee' },
+    { name: 'instagram', url: 'https://www.instagram.com/', color: '#e4405f' },
+    { name: 'whatsapp', url: 'https://wa.me/', color: '#25d366' },
+  ];
 
-                <Button title="Enviar" color="#2196F3" onPress={handleSubmit} />
+  return (
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Icon name="email" size={40} color="#2196F3" />
+            <Text style={[styles.title, { fontSize: width * 0.06 }]}>
+              ¡Contáctanos!
+            </Text>
+          </View>
 
-                <View style={styles.socialContainer}>
-                    <Text style={styles.socialText}>Síguenos en nuestras redes sociales:</Text>
-                    <View style={styles.socialIcons}>
-                        <TouchableOpacity onPress={() => openURL('https://www.facebook.com/')}>
-                            <Icon name="facebook" size={30} color="#3b5998" style={styles.icon} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => openURL('https://twitter.com/')}>
-                            <Icon name="twitter" size={30} color="#00acee" style={styles.icon} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => openURL('https://www.instagram.com/')}>
-                            <Icon name="instagram" size={30} color="#e4405f" style={styles.icon} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => openURL('https://wa.me/')}>
-                            <Icon name="whatsapp" size={30} color="#25d366" style={styles.icon} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
-    );
+          <View style={styles.separator} />
+
+          <Text style={[styles.text, { fontSize: width * 0.043 }]}>
+            ¿Tienes alguna pregunta o sugerencia? Llena el siguiente formulario y nos pondremos en contacto contigo.
+          </Text>
+
+          <TextInput
+            style={[styles.input, { fontSize: width * 0.04 }]}
+            placeholder="Tu nombre"
+            value={formData.name}
+            onChangeText={(text) => handleChange('name', text)}
+            returnKeyType="next"
+            blurOnSubmit={false}
+          />
+
+          <TextInput
+            style={[styles.input, { fontSize: width * 0.04 }]}
+            placeholder="Tu correo electrónico"
+            value={formData.email}
+            onChangeText={(text) => handleChange('email', text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            returnKeyType="next"
+            blurOnSubmit={false}
+          />
+
+          <TextInput
+            style={[styles.input, styles.textArea, { fontSize: width * 0.04 }]}
+            placeholder="Tu mensaje"
+            value={formData.message}
+            onChangeText={(text) => handleChange('message', text)}
+            multiline
+            numberOfLines={4}
+            returnKeyType="done"
+          />
+
+          <TouchableOpacity
+            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.buttonText}>
+              {isSubmitting ? 'Enviando...' : 'Enviar'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.socialContainer}>
+            <Text style={[styles.socialText, { fontSize: width * 0.045 }]}>
+              Síguenos en nuestras redes sociales:
+            </Text>
+            <View style={styles.socialIcons}>
+              {socialLinks.map((social, index) => (
+                <TouchableOpacity 
+                  key={index}
+                  onPress={() => openURL(social.url)}
+                  activeOpacity={0.7}
+                >
+                  <Icon 
+                    name={social.name} 
+                    size={30} 
+                    color={social.color} 
+                    style={styles.icon} 
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    safe: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    container: {
-        padding: 20,
-        paddingBottom: 40,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-    },
-    title: {
-        fontSize: width * 0.06,
-        fontWeight: 'bold',
-        color: '#2196F3',
-        marginLeft: 10,
-    },
-    separator: {
-        height: 2,
-        backgroundColor: '#2196F3',
-        width: '30%',
-        alignSelf: 'center',
-        marginVertical: 15,
-    },
-    text: {
-        fontSize: width * 0.043,
-        lineHeight: 24,
-        textAlign: 'center',
-        color: '#444',
-        marginBottom: 20,
-    },
-    input: {
-        height: 45,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        borderRadius: 8,
-        marginBottom: 15,
-        paddingHorizontal: 10,
-        fontSize: width * 0.04,
-    },
-    textArea: {
-        height: 120,
-        textAlignVertical: 'top',
-    },
-    socialContainer: {
-        marginTop: 30,
-        alignItems: 'center',
-    },
-    socialText: {
-        fontSize: width * 0.045,
-        marginBottom: 10,
-        color: '#444',
-    },
-    socialIcons: {
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        width: '60%',
-    },
-    icon: {
-        margin: 10,
-    },
+  safe: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  flex: {
+    flex: 1,
+  },
+  container: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#2196F3',
+    marginLeft: 10,
+  },
+  separator: {
+    height: 2,
+    backgroundColor: '#2196F3',
+    width: '30%',
+    alignSelf: 'center',
+    marginVertical: 15,
+  },
+  text: {
+    lineHeight: 24,
+    textAlign: 'center',
+    color: '#444',
+    marginBottom: 20,
+  },
+  input: {
+    height: 45,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  button: {
+    backgroundColor: '#2196F3',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonDisabled: {
+    backgroundColor: '#90CAF9',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  socialContainer: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  socialText: {
+    marginBottom: 10,
+    color: '#444',
+  },
+  socialIcons: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    width: '60%',
+  },
+  icon: {
+    margin: 10,
+  },
 });
