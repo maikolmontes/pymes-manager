@@ -146,7 +146,7 @@ export default function BusinessListMyScreen() {
         </Text>
 
         {item.latitude && item.longitude && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.locationButton}
             onPress={() => openLocationInMaps(item.latitude, item.longitude, item.name)}
           >
@@ -158,7 +158,7 @@ export default function BusinessListMyScreen() {
         {user?.user_type === 'Emprendedor' && (
           <View style={{ flexDirection: 'row', marginTop: 10 }}>
             <TouchableOpacity
-              onPress={() => navigation.navigate('EditBusiness', { business: item })}
+              onPress={() => navigation.navigate('Editar Negocios', { business: item })}
               style={{ marginRight: 15 }}
             >
               <Ionicons name="create-outline" size={20} color="#4CAF50" />

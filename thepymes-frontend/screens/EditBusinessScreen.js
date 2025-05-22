@@ -1,36 +1,56 @@
-// Este es un borrador base para la pantalla EditBusinessScreen basado en RegisterBusinessScreen
-// El usuario debe tener su backend configurado con la ruta PUT /businesses/:id
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Image,
-  ActivityIndicator
+  View, Text, StyleSheet, FlatList, ActivityIndicator, TextInput,
+  TouchableOpacity, Alert, Image, Modal
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { API_URL } from '@env';
 import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
+import { API_URL } from '@env';
+import { UserContext } from '../context/UserContext';
+import { Ionicons } from '@expo/vector-icons';
+
+const categories = [
+  'Restaurante', 'Tienda', 'Cafetería', 'Supermercado',
+  'Mercado', 'Frutería', 'Ferretería', 'Farmacia', 'Librería',
+  'Ropa', 'Zapatería', 'Juguetería', 'Papelería', 'Barbería', 'Estética',
+];
 
 export default function EditBusinessScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { business } = route.params;
+  const { user } = useContext(UserContext);
+  const [businesses, setBusinesses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [form, setForm] = useState({
+    name: '', category: '', description: '', image: null,
+  });
 
-  const [name, setName] = useState(business.name);
-  const [category, setCategory] = useState(business.category);
-  const [latitude, setLatitude] = useState(business.latitude.toString());
-  const [longitude, setLongitude] = useState(business.longitude.toString());
-  const [description, setDescription] = useState(business.description);
-  const [image, setImage] = useState(null);
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (user?.user_type === 'Emprendedor') {
+      fetchMyBusinesses();
+    }
+  }, []);
+
+  const fetchMyBusinesses = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/businesses/my/${user.id}`);
+      setBusinesses(res.data);
+    } catch (error) {
+      console.error('❌ Error al cargar negocios:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (business) => {
+    setSelected(business);
+    setForm({
+      name: business.name,
+      category: business.category,
+      description: business.description,
+      image: business.image_url || null,
+    });
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -38,139 +58,242 @@ export default function EditBusinessScreen() {
       Alert.alert('Permiso requerido', 'Se necesita acceso a la galería');
       return;
     }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
+      aspect: [4, 3],
       quality: 1,
     });
+
     if (!result.canceled && result.assets.length > 0) {
-      setImage(result.assets[0].uri);
+      setForm({ ...form, image: result.assets[0].uri });
     }
   };
 
   const handleUpdate = async () => {
-    if (!name || !category || !latitude || !longitude || !description) {
-      Alert.alert('Campos incompletos', 'Completa todos los campos');
+    if (!form.name || !form.category || !form.description) {
+      Alert.alert('Error', 'Todos los campos son obligatorios');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('category', category);
-    formData.append('latitude', latitude);
-    formData.append('longitude', longitude);
-    formData.append('description', description);
+    const data = new FormData();
+    data.append('name', form.name);
+    data.append('category', form.category);
+    data.append('description', form.description);
 
-    if (image) {
-      const filename = image.split('/').pop();
+    if (form.image && !form.image.startsWith('http')) {
+      const filename = form.image.split('/').pop();
       const ext = /\.(\w+)$/.exec(filename)?.[1] || 'jpg';
-      formData.append('image', {
-        uri: image,
-        name: `foto.${ext}`,
+      data.append('image', {
+        uri: form.image,
+        name: `imagen.${ext}`,
         type: `image/${ext}`,
       });
     }
 
     try {
-      setLoading(true);
-      await axios.put(`${API_URL}/businesses/${business.id}`, formData, {
+      await axios.put(`${API_URL}/businesses/${selected.id}`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      Alert.alert('Éxito', 'Negocio actualizado');
-      navigation.goBack();
+      Alert.alert('✅ Éxito', 'Negocio actualizado correctamente');
+      setSelected(null);
+      fetchMyBusinesses();
     } catch (error) {
-      console.error('❌ Error al actualizar:', error);
+      console.error('❌ Error al actualizar:', error.message);
       Alert.alert('Error', 'No se pudo actualizar el negocio');
-    } finally {
-      setLoading(false);
     }
   };
 
+  if (loading) return (
+    <View style={styles.center}>
+      <ActivityIndicator size="large" color="#2196F3" />
+      <Text>Cargando tus negocios...</Text>
+    </View>
+  );
+
+  if (selected) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Editar Negocio</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre"
+          value={form.name}
+          onChangeText={text => setForm({ ...form, name: text })}
+        />
+
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => setCategoryModalVisible(true)}
+        >
+          <Text style={{ color: '#333' }}>
+            {form.category || 'Seleccionar categoría'}
+          </Text>
+        </TouchableOpacity>
+
+        <TextInput
+          style={[styles.input, { height: 100 }]}
+          placeholder="Descripción"
+          value={form.description}
+          multiline
+          onChangeText={text => setForm({ ...form, description: text })}
+        />
+
+        {form.image && (
+          <Image
+            source={{ uri: form.image }}
+            style={styles.imagePreview}
+          />
+        )}
+
+        <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+          <Text style={styles.imageButtonText}>🖼️ Cambiar Imagen</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleUpdate}>
+          <Text style={styles.saveText}>Guardar Cambios</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => setSelected(null)}>
+          <Text style={styles.cancelText}>Cancelar</Text>
+        </TouchableOpacity>
+
+        {/* Modal de categorías */}
+        <Modal
+          visible={categoryModalVisible}
+          animationType="slide"
+          transparent
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Selecciona una categoría</Text>
+              <FlatList
+                data={categories}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.categoryItem}
+                    onPress={() => {
+                      setForm({ ...form, category: item });
+                      setCategoryModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.categoryText}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity onPress={() => setCategoryModalVisible(false)} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Editar Negocio</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre del negocio"
-        value={name}
-        onChangeText={setName}
+    <View style={styles.container}>
+      <Text style={styles.title}>Mis Negocios</Text>
+      <FlatList
+        data={businesses}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.card} onPress={() => handleEdit(item)}>
+            <Image source={{ uri: item.image_url }} style={styles.cardImage} />
+            <View style={styles.cardText}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.category}>{item.category}</Text>
+              <Text style={styles.description}>
+                {item.description?.substring(0, 80) || 'Sin descripción'}...
+              </Text>
+            </View>
+            <Ionicons name="create-outline" size={24} color="#2196F3" style={{ marginRight: 10 }} />
+          </TouchableOpacity>
+        )}
       />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Categoría"
-        value={category}
-        onChangeText={setCategory}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Latitud"
-        value={latitude}
-        onChangeText={setLatitude}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Longitud"
-        value={longitude}
-        onChangeText={setLongitude}
-      />
-
-      <TextInput
-        style={[styles.input, { height: 100 }]}
-        placeholder="Descripción"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-
-      <TouchableOpacity style={styles.buttonSecondary} onPress={pickImage}>
-        <Text style={styles.buttonText}>Cambiar imagen</Text>
-      </TouchableOpacity>
-
-      {image && <Image source={{ uri: image }} style={styles.imagePreview} />}
-
-      <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-        <Text style={styles.buttonText}>Guardar cambios</Text>
-      </TouchableOpacity>
-
-      {loading && <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#2196F3" />}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#f4f4f4' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  container: { padding: 20, backgroundColor: '#f4f4f4', flex: 1 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
   input: {
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-    fontSize: 16,
+    backgroundColor: '#fff', padding: 12, marginBottom: 12,
+    borderRadius: 8, fontSize: 16,
   },
-  button: {
-    backgroundColor: '#2196F3',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
+  saveButton: {
+    backgroundColor: '#2196F3', padding: 14,
+    borderRadius: 8, alignItems: 'center', marginBottom: 12,
   },
-  buttonSecondary: {
-    backgroundColor: '#FF9800',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
+  saveText: { color: '#fff', fontWeight: 'bold' },
+  cancelButton: {
+    padding: 12, borderRadius: 8,
+    backgroundColor: '#ccc', alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  cancelText: { color: '#000', fontWeight: 'bold' },
   imagePreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginTop: 10,
+    width: '100%', height: 200, marginBottom: 12,
+    borderRadius: 12, resizeMode: 'cover',
+  },
+  imageButton: {
+    backgroundColor: '#FF9800',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  imageButtonText: { color: '#fff', fontWeight: 'bold' },
+  card: {
+    flexDirection: 'row', backgroundColor: '#fff',
+    marginBottom: 12, borderRadius: 10, overflow: 'hidden',
+    alignItems: 'center',
+  },
+  cardImage: {
+    width: 60, height: 60, margin: 10, borderRadius: 8,
+  },
+  cardText: { flex: 1 },
+  name: { fontWeight: 'bold', fontSize: 16 },
+  category: { color: '#2196F3', fontSize: 14 },
+  description: { color: '#555', fontSize: 13, marginTop: 4 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    width: '80%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  categoryItem: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  categoryText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: '#2196F3',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
-

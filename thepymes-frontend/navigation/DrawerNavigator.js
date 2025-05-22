@@ -26,6 +26,7 @@ import BusinessListScreen from '../screens/BusinessListScreen';
 import BusinessListMyScreen from '../screens/BusinessListMyScreen';
 import AboutScreen from '../screens/AboutScreen';
 import ContactScreen from '../screens/ContactScreen';
+import EditBusinessScreen from '../screens/EditBusinessScreen';
 
 const { width } = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -65,41 +66,31 @@ function CustomDrawerContent({ navigation }) {
           label="Inicio"
           labelStyle={styles.drawerLabel}
           onPress={() => navigation.navigate('Inicio')}
-          icon={() => (
-            <Image source={require('../assets/logoW.png')} style={styles.icon} />
-          )}
+          icon={() => <Image source={require('../assets/logoW.png')} style={styles.icon} />}
         />
         <DrawerItem
           label="Mapa"
           labelStyle={styles.drawerLabel}
           onPress={() => navigation.navigate('Mapa')}
-          icon={() => (
-            <Image source={require('../assets/logo2.png')} style={styles.icon} />
-          )}
+          icon={() => <Image source={require('../assets/logo2.png')} style={styles.icon} />}
         />
         <DrawerItem
           label="Lista Negocios"
           labelStyle={styles.drawerLabel}
           onPress={() => navigation.navigate('Lista Negocios')}
-          icon={() => (
-            <Image source={require('../assets/logo3.png')} style={styles.icon} />
-          )}
+          icon={() => <Image source={require('../assets/logo3.png')} style={styles.icon} />}
         />
         <DrawerItem
           label="Nosotros"
           labelStyle={styles.drawerLabel}
           onPress={() => navigation.navigate('Nosotros')}
-          icon={() => (
-            <Image source={require('../assets/logo4.png')} style={styles.icon} />
-          )}
+          icon={() => <Image source={require('../assets/logo4.png')} style={styles.icon} />}
         />
         <DrawerItem
           label="Contacto"
           labelStyle={styles.drawerLabel}
           onPress={() => navigation.navigate('Contacto')}
-          icon={() => (
-            <Image source={require('../assets/logo5.png')} style={styles.icon} />
-          )}
+          icon={() => <Image source={require('../assets/logo5.png')} style={styles.icon} />}
         />
 
         {/* No autenticado */}
@@ -109,17 +100,13 @@ function CustomDrawerContent({ navigation }) {
               label="Iniciar Sesión"
               labelStyle={styles.drawerLabel}
               onPress={() => navigation.navigate('IniciarSesion')}
-              icon={() => (
-                <Image source={require('../assets/logo1.png')} style={styles.icon} />
-              )}
+              icon={() => <Image source={require('../assets/logo1.png')} style={styles.icon} />}
             />
             <DrawerItem
               label="Registrarse"
               labelStyle={styles.drawerLabel}
               onPress={() => navigation.navigate('Registrarse')}
-              icon={() => (
-                <Image source={require('../assets/logo1.png')} style={styles.icon} />
-              )}
+              icon={() => <Image source={require('../assets/logo1.png')} style={styles.icon} />}
             />
           </>
         )}
@@ -131,18 +118,15 @@ function CustomDrawerContent({ navigation }) {
               label="Mis Negocios"
               labelStyle={styles.drawerLabel}
               onPress={() => navigation.navigate('Mis Negocios')}
-              icon={() => (
-                <Image source={require('../assets/logo3.png')} style={styles.icon} />
-              )}
+              icon={() => <Image source={require('../assets/logo3.png')} style={styles.icon} />}
             />
             <DrawerItem
               label="Registrar Negocios"
               labelStyle={styles.drawerLabel}
               onPress={() => navigation.navigate('Registro Negocios', { user })}
-              icon={() => (
-                <Image source={require('../assets/logo3.png')} style={styles.icon} />
-              )}
+              icon={() => <Image source={require('../assets/logo3.png')} style={styles.icon} />}
             />
+
           </>
         )}
 
@@ -173,12 +157,13 @@ export default function DrawerNavigator() {
       }}
     >
       <Drawer.Screen name="Inicio" component={HomeScreen} />
-      <Drawer.Screen name="IniciarSesion" component={LoginScreen} options={{ title: 'Iniciar Sesión' }} />
+      <Drawer.Screen name="IniciarSesion" component={LoginScreen} />
       <Drawer.Screen name="Registrarse" component={RegisterClientScreen} />
       <Drawer.Screen name="Mapa" component={MapScreen} />
       <Drawer.Screen name="Lista Negocios" component={BusinessListScreen} />
       <Drawer.Screen name="Mis Negocios" component={BusinessListMyScreen} />
       <Drawer.Screen name="Registro Negocios" component={RegisterBusinessScreen} />
+      <Drawer.Screen name="Editar Negocios" component={EditBusinessScreen} options={{ drawerItemStyle: { display: 'none' } }} />
       <Drawer.Screen name="Nosotros" component={AboutScreen} />
       <Drawer.Screen name="Contacto" component={ContactScreen} />
     </Drawer.Navigator>
