@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "thepymes-frontend",
+    "name": "The Pymes Manager",
     "slug": "thepymes-frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logoW.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logoW.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
